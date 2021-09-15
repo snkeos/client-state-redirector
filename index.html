@@ -22,21 +22,64 @@
 	<body>
 		<h1>Redirecting</h1>
 		<p id="req-js">This page requires JavaScript</p>
+		<p id="error" hidden="hidden" style="color: red"></p>
 		<script>
 
 			var reqJS = document.getElementById('req-js');
 			reqJS.hidden = true;
 
+			function die(message) {
+				var e = doc.getElementById('error');
+				e.innerText = message;
+				e.hidden = false;
+				throw new Error(message);
+			}
+
 			var url = new URL(window.location.href);
 			var cognitoUrl = url.searchParams.get('cognito_url');
-			var postLogoutRedirectUri = url.searchParams.get('post_logout_redirect_uri');
+			var storage = window.localStorage;
 
-			var dst = new URL(postLogoutRedirectUri);
-			dst.searchParams.set('state', url.searchParams.get('state'));
-			// dst.searchParams.set('redirect_uri', 'http://127.0.0.2/blah');
-			console.log(dst);
+			if(cognitoUrl) {
+				var SAVE_PARAMS = ['post_logout_redirect_uri', 'state'];
 
-			window.location = dst.toString();
+				// phase 1: Keycloak -> this page -> Cognito
+
+				SAVE_PARAMS.forEach(function (paramName) {
+					var paramValue = url.searchParams.get(paramName);
+					if(!paramValue) {
+						die(paramName + ' parameter is missing');
+					}
+					storage.setItem(paramName, paramValue);
+				});
+
+				cognitoUrl = new URL(cognitoUrl);
+				cognitoUrl.searchParams.set('logout_uri', window.location.href.split('?')[0]);
+
+				// For local testing:
+				// cognitoUrl.searchParams.set('logout_uri', 'https://127.0.0.1:8000/index.html');
+
+				window.location = cognitoUrl.toString();
+
+			} else {
+				// phase 2: Cognito -> this page -> Keycloak
+
+				var postLogoutRedirectUri = storage.getItem('post_logout_redirect_uri');
+				if(!postLogoutRedirectUri) {
+					die('post_logout_redirect_uri was not found in local storage');
+				}
+
+				var state = storage.getItem('state');
+				if(!state) {
+					die('state was not found in local storage');
+				}
+
+				var dst = new URL(postLogoutRedirectUri);
+				dst.searchParams.set('state', state);
+
+				window.location = dst.toString();
+
+			}
+
 		</script>
 	</body>
 </html>
