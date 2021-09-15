@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!-- From https://github.com/snkeos/client-state-redirector -->
+<!--
+	Keycloak uses https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
+	AWS Cognito does not support that - https://docs.aws.amazon.com/cognito/latest/developerguide/logout-endpoint.html .
+	Solution: this page.
+	Configure this page in Keycloak as logout URL for the Cogntio IDP. It will save state in a cookie.
+	Configure this page in Cognito as logout_uri. It will redirect to Keycloak with the state from the saved cookie.
+
+	Cognito logout example:
+	GET https://mydomain.auth.us-east-1.amazoncognito.com/logout?client_id=X&logout_uri=https://myclient/logout
+
+	Keycloak logout sample:
+	https://mycognito.example.com/logout?client_id=...&logout_uri=https://mykeycloak.example.com/auth/realms/cdh/broker/oidc/endpoint&state=50bafe45-da83-40f9-9c66-3e19da3b338a&id_token_hint=...&post_logout_redirect_uri=https://mykeycloak.example.com/auth/realms/cdh/broker/oidc/endpoint/logout_response
+
+-->
+<html lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<title>Redirecting</title>
+	</head>
+	<body>
+		<h1>Redirecting</h1>
+		<p id="req-js">This page requires JavaScript</p>
+		<script>
+
+			var reqJS = document.getElementById('req-js');
+			reqJS.hidden = true;
+
+			var url = new URL(window.location.href);
+			var cognitoUrl = url.searchParams.get('cognito_url');
+			var postLogoutRedirectUri = url.searchParams.get('post_logout_redirect_uri');
+
+			var dst = new URL(postLogoutRedirectUri);
+			dst.searchParams.set('state', url.searchParams.get('state'));
+			// dst.searchParams.set('redirect_uri', 'http://127.0.0.2/blah');
+			console.log(dst);
+
+			window.location = dst.toString();
+		</script>
+	</body>
+</html>

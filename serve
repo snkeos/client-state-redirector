@@ -1,0 +1,10 @@
+#!/usr/bin/env ngs
+
+# NGS - https://github.com/ngs-lang/ngs
+
+# Use: ./serve [port]
+
+F main(port:Int=8000) {
+    # top_level:: below means do not capture the output but pass it through
+    $(top_level:: python3 -m http.server $port --bind 127.0.0.1)
+}
