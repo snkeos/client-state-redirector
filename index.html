@@ -29,7 +29,7 @@
 			reqJS.hidden = true;
 
 			function die(message) {
-				var e = doc.getElementById('error');
+				var e = document.getElementById('error');
 				e.innerText = message;
 				e.hidden = false;
 				throw new Error(message);
